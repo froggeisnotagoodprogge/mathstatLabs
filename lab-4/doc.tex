@@ -1,0 +1,112 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{xcolor}
+\usepackage[english,russian]
+{babel}
+\usepackage{amsfonts}
+\usepackage{listings}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle, language=[Auto]Lisp, inputencoding=cp1251}
+
+\begin{document}
+\Large\textbf{Лабораторная работа №4}
+
+\textbf{Выполнил: Кузнецов Павел М3207}
+
+\textbf{Вариант 2}
+\vspace{5mm}
+
+\textbf{Условие:}
+В файле представлены данные о мобильных телефонах.
+
+1. Разумно ли считать, что емкость аккумулятора распределена равномерно?
+
+2. Верно ли, что телефонов с поддержкой 3G больше моделей с Wi-Fi? А разнится ли количество телефонов с touch screen от моделей с двумя сим-картами? На каждый вопрос по тесту.
+
+3. Есть подозрение, что цена зависит от объема оперативной памяти. Проверите данное утверждение.
+\vspace{5mm}
+
+\textbf{Решение:}
+
+Формализация задачи:
+
+1. Разумно ли считать, что емкость аккумулятора имеет нормальное распределение, гипотеза $H_0 - $ емкость статистически распределена нормально.
+
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+data = pd.read_csv('/Users/frogge/proggs/mathstatLabs/lab-4/mobile_phones.csv')
+
+unkwn, p = stats.kstest(data['battery_power'], 'norm')
+if p > 0.05:
+    print('the h0 hypothesis is correct')
+else:
+    print('the h0 hypothesis is incorrect')
+
+\end{lstlisting}   
+Получившиеся результаты:
+
+Гипотеза $H_0$ неверна.
+
+Проверяем гипотезу с помощью критерия согласия Колмогорова
+
+2. Верно ли, что телефонов с поддержкой 3G больше моделей с Wi-Fi, разнится ли количество телефонов с touch screen от моделей с двумя сим-картами:
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+unneeded, p = stats.ttest_ind(data['three_g'], data['wifi'])
+print(p)  # p from Student'test
+if p > 0.05:
+    print('h0 hipothesis is incorrect')
+else:
+    print('h0 hipothesis is correct')
+
+unneeded, p = stats.mannwhitneyu(data['touch_screen'], data['dual_sim'])
+print(p)  # p parameter for mannwhitneyu
+if p > 0.05:
+    print('h0 hipothesis is incorrect')
+else:
+    print('h0 hipothesis is correct')
+\end{lstlisting}   
+
+Получившиеся результаты:
+
+Гипотеза $H_{01}$ верна - количество телефонов с поддержкой 3G отличается от кол-ва моделей с WI-Fi по двухвыборочному тесту Стьюдента
+
+Гипотеза $H_{02}$ неверна - количество телефонов с touch screen не отличается от количества моделей с двумя сим-картами по тесту Манна-Уитни, сравнивающему средние результаты.
+
+3. Проверить зависимость цены от объёма оперативной памяти. Гипотеза $H_0$ - Цена зависит от объема:
+
+Для проверки данной гипотезы можем использовать критерий независимости Пирсона, точный тест Фишера, ранговый критерий Спирмена, ранговый критерий Кендалла
+
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+unneeded, p = spearmanr(data['price_range'], data['ram'])
+if p < 0.05:
+    print('h0 is correct')
+else:
+    print("h0 is incorrect")
+\end{lstlisting}   
+
+Получившиеся результаты:
+Применил критерии Спирмена и критерий Кендалла - гипотеза принимается (есть зависимость на статистике цены от объёма оперативной памяти)
+\end{document}
