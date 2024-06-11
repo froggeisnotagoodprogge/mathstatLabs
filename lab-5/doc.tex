@@ -1,0 +1,146 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage{xcolor}
+\usepackage[english,russian]
+{babel}
+\usepackage{amsfonts}
+\usepackage{listings}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle, language=[Auto]Lisp, inputencoding=cp1251}
+
+\begin{document}
+\Large\textbf{Лабораторная работа №5}
+
+\textbf{Выполнил: Кузнецов Павел М3207}
+
+\textbf{Вариант 3}
+\vspace{5mm}
+
+\textbf{Условие:}
+
+Вариант 3. В файле приведены данные о мужской обуви.
+
+1. Постройте линейную модель, где в качестве независимых переменных выступают расход в городе, расход на шоссе, мощность (вместе со свободным коэффициентом), зависимой – цена.
+
+2. Проверьте следующие подозрения:
+
+a)Чем больше мощность, тем больше цена
+
+b)Цена изменяется в зависимости от расхода в городе
+
+c)Проверьте гипотезу $H_0$ о равенстве одновременно нулю коэффициентов при расходе в городе и расходе на шоссе против альтернативы $H1 = \bar H0$
+\vspace{5mm}
+
+\textbf{Решение:}
+
+Вычисляем оценки коэффициентов линейной модели:
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+import pandas as pd
+import numpy
+import scipy.stats as stats
+
+data = pd.read_csv('/Users/frogge/proggs/mathstatLabs/lab-5/cars93.csv')
+
+
+X = numpy.column_stack((numpy.ones(len(data)), data["MPG.city"], data["MPG.highway"], data["Horsepower"]))
+Y = data['Price']
+
+coefficients = numpy.linalg.inv(X.T.dot(X)).dot(X.T).dot(Y)  #matrix method
+\end{lstlisting}   
+
+Получившиеся коэффициенты:
+
+overall: 6.68867892
+
+city: -0.03860018
+
+highway: -0.17885863
+
+horsepower: 0.13131383
+
+Остаточная дисперсия, доверительные интервалы для оценок коэффициентов:
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+resvariance = numpy.sum((Y - X.dot(coefficients))**2) / (len(data) - len(coefficients))
+
+covariance = resvariance * numpy.linalg.inv(X.T.dot(X))
+err = numpy.sqrt(numpy.diag(covariance))
+t = stats.t.ppf(0.975, len(data) - len(coefficients))
+dov_intervals = numpy.column_stack((coefficients - t * err, coefficients + t * err))
+\end{lstlisting} 
+
+Получившиеся значения:
+
+Остаточная дисперсия: 35.694685733186155
+
+Доверительные интервалы для коэффициентов:
+
+[[-5.21020505 18.58756289]
+
+ [-0.74812245  0.67092209]
+ 
+ [-0.88350169  0.52578444]
+ 
+ [ 0.09931121  0.16331646]]
+
+Вычисляем коэффициент детерминации:
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+NSM = numpy.sum((Y - numpy.mean(Y))**2)
+ESM = numpy.sum((X.dot(coefficients) - numpy.mean(Y))**2)
+R2 = ESM / NSM
+\end{lstlisting} 
+Коэффициент детерминации: 0.6299138920082498
+
+\textbf{2. Проверка гипотез:}
+\begin{lstlisting}[language=Python, mathescape=true, breaklines=true]
+uneededv, p = stats.ttest_ind(Y, data["Horsepower"])
+if p < 0.05:
+    print("first hypothesis incorrect")
+else:
+    print("first hypothesis correct")
+
+
+uneededv, p = stats.ttest_ind(Y, data["MPG.city"])
+if p < 0.05:
+    print("second hypothesis incorrect")
+else:
+    print("second hypothesis correct")
+
+uneededv, pc = stats.f_oneway(Y, data["MPG.city"])
+uneededv, ph = stats.f_oneway(Y, data["MPG.highway"])
+if pc < 0.05 or ph < 0.05:
+    print("third hypothesis incorrect")
+else:
+    print("third hypothesis correct")
+\end{lstlisting}
+Вывод:
+
+Первая гипотеза отвергается: мощность влияет на цену
+
+Вторая гипотеза отвергается: расход в городе влияет на цену
+
+Третья гипотеза отвергается: цена зависит от расхода в городе и/или от расхода на шоссе
+\end{document}
